@@ -1,14 +1,25 @@
 param (
-  $TerraformPath = "C:\Terraform\";
+  $TerraformPath = "X:\Terraform\"
 )
 
-$TerraformInPath = $($env:Path).Split(";").Where{$_.ToLower().Contains("terraform")}
+Set-ExecutionPolicy Unrestricted -Scope Process;
+
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Internet Explorer\Main" -Name "DisableFirstRunCustomize" -Value 2;
+
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+$WebClient = New-Object Net.WebClient;
+
+$TerraformInPath = $($env:Path).Split(";").Where{$_.ToLower().Contains("terraform")};
 
 if($TerraformInPath.Count -gt 0){
   $TerraformRootPath = $TerraformInPath[0];
 }
 else {
   $TerraformRootPath = $TerraformPath;
+}
+
+if(!(Test-Path $TerraformRootPath)){
+	New-Item -Type Directory -Path $TerraformRootPath -Verbose;
 }
 
 Set-Location $TerraformRootPath
@@ -22,7 +33,11 @@ $TerraformReleaseLatestUrl = "$($TerraformReleasesRootUrl)$($TerraformReleasesLa
 
 $TerraformLatestReleaseDownloadLink = (Invoke-WebRequest -Uri $TerraformReleaseLatestUrl).Links.Where{($_.innerText.Contains("windows_amd64"))}
 
-Invoke-WebRequest -Uri $TerraformLatestReleaseDownloadLink.href -OutFile $TerraformLatestReleaseDownloadLink.innerText
+$FileName = "$($TerraformRootPath)$($TerraformLatestReleaseDownloadLink.innerText)";
+
+$WebClient.DownloadFile($TerraformLatestReleaseDownloadLink.href, $FileName);
+
+# Invoke-WebRequest -Uri $TerraformLatestReleaseDownloadLink.href -OutFile $TerraformLatestReleaseDownloadLink.innerText
 
 Get-ChildItem -Filter "terraform.exe" | %{Rename-Item -Path $_.FullName -NewName "$($_.BaseName)_backup_$($_.CreationTime.ToString("yyyyMMdd"))$($_.Extension)"}
 
