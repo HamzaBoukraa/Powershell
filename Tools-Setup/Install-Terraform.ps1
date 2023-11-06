@@ -12,10 +12,11 @@ $WebClient = New-Object Net.WebClient;
 $TerraformInPath = $($env:Path).Split(";").Where{$_.ToLower().Contains("terraform")};
 
 if($TerraformInPath.Count -gt 0){
-  $TerraformRootPath = $TerraformInPath[0];
+	$TerraformRootPath = $TerraformInPath[0];
 }
 else {
-  $TerraformRootPath = $TerraformPath;
+	$TerraformRootPath = $TerraformPath;
+	$env:Path += ";$($TerraformRootPath)";
 }
 
 if(!(Test-Path $TerraformRootPath)){
@@ -41,4 +42,4 @@ $WebClient.DownloadFile($TerraformLatestReleaseDownloadLink.href, $FileName);
 
 Get-ChildItem -Filter "terraform.exe" | %{Rename-Item -Path $_.FullName -NewName "$($_.BaseName)_backup_$($_.CreationTime.ToString("yyyyMMdd"))$($_.Extension)"}
 
-Expand-Archive -Path $TerraformLatestReleaseDownloadLink.innerText -DestinationPath $TerraformRootPath
+Expand-Archive -Path $FileName -DestinationPath $TerraformRootPath
